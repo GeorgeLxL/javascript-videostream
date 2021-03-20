@@ -1,0 +1,131 @@
+<html>
+<head>
+  <title>Play Video Seamlessly</title>
+  <style>
+  video {
+      background-color:white;
+      width: 100%;
+    }
+  </style>
+</head>
+
+<body>
+  <button onclick="playVid()" type="button">Play Video</button>
+  <button onclick="pauseVid(this)" type="button">Pause/Resume</button><br> 
+  <video class="currentVideo" width="640" height="360" hidden>
+     <source src="" type="video/mp4">
+     Your browser does not support HTML5 video.
+  </video>
+
+  <video class="prevVideo" width="640" height="360" hidden>
+    <source src="" type="video/mp4">
+    Your browser does not support HTML5 video.
+ </video>
+
+  <div>
+    <canvas id="myCanvas" width="640" height="360" />
+  </div>
+
+  <script>
+    var index = 2
+    var playstatus = false ;
+    var vidcurrent = document.getElementsByClassName("currentVideo")[0];
+    path = "./video/1.mp4";
+    vidcurrent.src= path;
+    vidcurrent.load();
+    var prev = false;
+
+    function playVid() {
+      vidcurrent = document.getElementsByClassName("currentVideo")[0];
+      prevvideo = document.getElementsByClassName("prevVideo")[0];
+      console.log(vidcurrent);
+      console.log(prevvideo);
+      playstatus = true;
+      prev = false;
+      loadNextvideo();
+      vidcurrent.play();
+
+      vidcurrent.onplay = function () {
+        timerID = window.setInterval(function () {
+          drawImage(vidcurrent);
+        }, 30);
+      };
+
+      vidcurrent.onended = function() {
+        vidcurrent.className="prevVideo";
+        console.log(vidcurrent.className);
+        prevvideo.className="currentVideo";
+        index ++;
+        playVid();
+      };
+    }
+
+    function loadNextvideo()
+    {
+      var prevvideo = document.getElementsByClassName("prevVideo")[0];
+      path = "./video/" + index + ".mp4";
+      var http = new XMLHttpRequest();
+      http.responseType = 'blob';
+      http.open("GET", path);      
+      http.send();
+      http.onload = function() {
+        if (this.status === 200) {
+          var reader = new FileReader();
+          reader.onloadend = function() {
+  
+            var byteCharacters = atob(reader.result.slice(reader.result.indexOf(',') + 1));
+            
+            var byteNumbers = new Array(byteCharacters.length);
+
+            for (var i = 0; i < byteCharacters.length; i++) {
+              
+              byteNumbers[i] = byteCharacters.charCodeAt(i);
+              
+            }
+
+            var byteArray = new Uint8Array(byteNumbers);
+            var blob = new Blob([byteArray], {type: 'video/ogg'});
+            var url = URL.createObjectURL(blob);
+            prevvideo.src = url
+         
+            console.log(path + "File exists");
+            prev = true;
+          }
+          reader.readAsDataURL(http.response);
+         
+      } else { 
+        console.log(path +" File doesn't exists");
+        // prevvideo.src = "./video/1.mp4";
+        //prevvideo.load();
+        //  index = 1;
+        //  prev = true
+        // return; 
+        }
+      };
+      
+      if(!prev)
+      {
+        setTimeout(loadNextvideo, 3000);
+      }
+      
+    }
+    
+    function pauseVid(btn){
+      vid=document.getElementsByClassName("currentVideo")[0];
+      if(playstatus){
+        vid.pause();
+      }else{
+        vid.play();
+      }
+      playstatus=!playstatus;
+    }
+    
+    function drawImage(vid) {
+      var canvas = document.getElementById("myCanvas");
+      var ctx = canvas.getContext("2d");
+      ctx.drawImage(vid, 0, 0, 640, 360);
+    }
+  </script>
+</body>
+
+</html>
